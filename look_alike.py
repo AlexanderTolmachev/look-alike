@@ -184,6 +184,7 @@ def main():
     correlation_map = calculate_correlations(site_ratings_data, target_site_id).collectAsMap()
     predicted_ratings_by_users = predict_user_ratings(site_ratings_data, correlation_map, target_site_id)
     result = predicted_ratings_by_users.takeOrdered(users_count, lambda x: -x[1])
+    spark_context.stop()
 
     for item in result:
         print item[0], ":", item[1]

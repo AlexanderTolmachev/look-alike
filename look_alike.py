@@ -53,6 +53,7 @@ def calculate_ratings(data):
         combiner1[1] = max_visits_count
         return combiner1
 
+    # Calculates site ratings for particular user using aggregated user visits count per site and max visits count.
     def calculate_site_ratings_for_user(key_value_pair):
         user_id = key_value_pair[0]
         combiner_result = key_value_pair[1]

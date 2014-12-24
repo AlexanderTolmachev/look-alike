@@ -22,25 +22,48 @@ def parse_log_line(log_line):
 # Rating calculation for particular user is based on visits count: rating(site) = visits_count(site) / max_visits_count
 # Thus, rating is a number from range [0.0, 1.0]
 def calculate_ratings(data):
+    # Creates initial combiner for aggregating user visits count per site and max visits count.
+    def create_combiner(site_id):
+        site_id_to_visits_count = dict()
+        site_id_to_visits_count[site_id] = 1
+        return [site_id_to_visits_count, 1]
+
+    # Updates combiner containing partially aggregated data by visited site id.
+    def sum_combiner_with_value(combiner, site_id):
+        site_id_to_visits_count = combiner[0]
+        max_visits_count = combiner[1]
+        if site_id not in site_id_to_visits_count:
+            site_id_to_visits_count[site_id] = 0
+        site_id_to_visits_count[site_id] += 1
+        # max visits count can only change due to updated dict item
+        combiner[1] = max(max_visits_count, site_id_to_visits_count[site_id])
+        return combiner
+
+    # Sums two combiners containing partially aggregated data.
+    def sum_combiners(combiner1, combiner2):
+        site_id_to_visits_count1 = combiner1[0]
+        site_id_to_visits_count2 = combiner2[0]
+        max_visits_count = combiner1[1]
+        for site_id, visits_count in site_id_to_visits_count2.iteritems():
+            if site_id not in site_id_to_visits_count1:
+                site_id_to_visits_count1[site_id] = 0
+            site_id_to_visits_count1[site_id] += visits_count
+            # max visits count can only change due to updated dict items
+            max_visits_count = max(max_visits_count, site_id_to_visits_count1[site_id])
+        combiner1[1] = max_visits_count
+        return combiner1
+
     def calculate_site_ratings_for_user(key_value_pair):
         user_id = key_value_pair[0]
-        site_ids = key_value_pair[1]
+        combiner_result = key_value_pair[1]
+        site_ratings_map = combiner_result[0]
+        max_visits_count = float(combiner_result[1])
+        for site_id in site_ratings_map:
+            site_ratings_map[site_id] /= max_visits_count
+        return user_id, site_ratings_map
 
-        site_id_to_visits_count = dict()
-        max_visits_count = 0.0
-        for site_id in site_ids:
-            if site_id not in site_id_to_visits_count:
-                site_id_to_visits_count[site_id] = 0.0
-            site_id_to_visits_count[site_id] += 1
-            max_visits_count = max(max_visits_count, site_id_to_visits_count[site_id])
-
-        ratings = dict()
-        for site_id, visits_count in site_id_to_visits_count.iteritems():
-            site_rating = visits_count / max_visits_count
-            ratings[site_id] = site_rating
-        return user_id, ratings
-
-    return data.groupByKey().map(calculate_site_ratings_for_user)
+    return data.combineByKey(create_combiner, sum_combiner_with_value, sum_combiners).\
+        map(calculate_site_ratings_for_user)
 
 
 # Performs distributed calculation of correlations between target site and all other sites.

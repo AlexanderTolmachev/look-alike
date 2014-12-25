@@ -3,18 +3,17 @@ from argparse import ArgumentParser
 from math import sqrt
 
 APPLICATION_NAME = "Look-Alike Task"
-LOG_LINE_FIELDS_NUMBER = 22
 
 
 # Parses user id and site id from log line. Each log line indicates that
 # user with user_id visited site with site_id.
 def parse_log_line(log_line):
-    parts = log_line.split("*")
-    if len(parts) < LOG_LINE_FIELDS_NUMBER:
+    parts = log_line.split("\t")
+    if len(parts) != 2:
         # invalid log line
         return []
-    user_id = parts[3]
-    site_id = int(parts[4])
+    user_id = parts[0]
+    site_id = int(parts[1])
     return [(user_id, site_id)]
 
 

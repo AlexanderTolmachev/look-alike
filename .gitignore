@@ -1,0 +1,8 @@
+pyspark
+# TEX files
+*.aux
+*.log
+*.pyg
+*.synctex.gz
+*.toc
+

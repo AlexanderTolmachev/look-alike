@@ -18,7 +18,8 @@ def parse_log_line(log_line):
 
 
 # Performs distributed calculation of site ratings for each user.
-# Rating calculation for particular user is based on visits count: rating(site) = visits_count(site) / max_visits_count
+# Rating calculation for particular user is based on visits count:
+# rating(site) = visits_count(site) / max_visits_count
 # Thus, rating is a number from range [0.0, 1.0]
 def calculate_ratings(data):
     # Creates initial combiner for aggregating user visits count per site and max visits count.
@@ -52,7 +53,8 @@ def calculate_ratings(data):
         combiner1[1] = max_visits_count
         return combiner1
 
-    # Calculates site ratings for particular user using aggregated user visits count per site and max visits count.
+    # Calculates site ratings for particular user using aggregated user visits count per site
+    # and max visits count.
     def calculate_site_ratings_for_user(key_value_pair):
         user_id = key_value_pair[0]
         combiner_result = key_value_pair[1]
@@ -68,8 +70,9 @@ def calculate_ratings(data):
 
 # Performs distributed calculation of correlations between target site and all other sites.
 def calculate_correlations(ratings_data, target_site_id):
-    # Takes site ratings for particular user and produces pairs, where one element is rating of target site and
-    # other one is rating of other site visited by this user. If user has not visited target site, produces nothing.
+    # Takes site ratings for particular user and produces pairs, where one element is rating
+    # of target site and other one is rating of other site visited by this user.
+    # If user has not visited target site, produces nothing.
     # The output is like the following:
     # site1_id: site1_rating, target_site_rating
     # site2_id: site2_rating, target_site_rating
@@ -80,13 +83,13 @@ def calculate_correlations(ratings_data, target_site_id):
         if target_site_id not in ratings:
             return []
         target_site_rating = ratings[target_site_id]
-        return [(site_id, (site_rating, target_site_rating)) for (site_id, site_rating) in ratings.iteritems()
-                if site_id != target_site_id]
+        return [(site_id, (site_rating, target_site_rating)) for (site_id, site_rating)
+                in ratings.iteritems() if site_id != target_site_id]
 
-    # Creates initial combiner for aggregating data that needed to calculate Pearson correlation coefficient.
-    # We need to collect sum of all user ratings for both sites, sum of squared ratings for both sites,
-    # sum of rating products and count of occurred rating pairs. So each item of created list is used to collect
-    # this data respectively.
+    # Creates initial combiner for aggregating data that needed to calculate Pearson correlation
+    # coefficient. We need to collect sum of all user ratings for both sites, sum of squared
+    # ratings for both sites, sum of rating products and count of occurred rating pairs.
+    # So each item of created list is used to collect this data respectively.
     def create_combiner(site_ratings_pair):
         rating1 = site_ratings_pair[0]
         rating2 = site_ratings_pair[1]
@@ -137,13 +140,13 @@ def calculate_correlations(ratings_data, target_site_id):
         flatMap(calculate_correlation)
 
 
-# Calculates predicted rating of target site for users, which hasn't visited it, basing on user ratings of sites and
-# correlations between target site and other sites
+# Calculates predicted rating of target site for users, which hasn't visited it, basing on user
+# ratings of sites and correlations between target site and other sites
 def predict_user_ratings(site_ratings_data, correlation_map, target_site_id):
     # Calculates predicted rating of target site for particular user.
-    # Produces pair (user_id, predicted_rating) if user hasn't visited target site and nothing otherwise.
-    # Predicted rating is calculated as weighted deviation from average user ratings of sites, where weights are
-    # correlation coefficients.
+    # Produces pair (user_id, predicted_rating) if user hasn't visited target site and
+    # nothing otherwise. Predicted rating is calculated as weighted deviation from average user
+    # ratings of sites, where weights are correlation coefficients.
     def predict_rating_for_user(user_ratings_pair):
         user_id = user_ratings_pair[0]
         ratings = user_ratings_pair[1]
@@ -169,7 +172,7 @@ def predict_user_ratings(site_ratings_data, correlation_map, target_site_id):
 def main():
     args_parser = ArgumentParser()
     args_parser.add_argument("--input", help="input files location", required=True)
-    args_parser.add_argument("--target-site", help="target site id, for which list of recommended users should be provided", required=True)
+    args_parser.add_argument("--target-site", help="target site id", required=True)
     args_parser.add_argument("--users-count", help="number of users in result list", required=True)
 
     args = args_parser.parse_args()
@@ -182,8 +185,8 @@ def main():
     input_data = spark_context.textFile(input_files_location).flatMap(parse_log_line)
     site_ratings_data = calculate_ratings(input_data).cache()  # cache as this data is used twice
     correlation_map = calculate_correlations(site_ratings_data, target_site_id).collectAsMap()
-    predicted_ratings_by_users = predict_user_ratings(site_ratings_data, correlation_map, target_site_id)
-    result = predicted_ratings_by_users.takeOrdered(users_count, lambda x: -x[1])
+    predicted_ratings = predict_user_ratings(site_ratings_data, correlation_map, target_site_id)
+    result = predicted_ratings.takeOrdered(users_count, lambda x: -x[1])
     spark_context.stop()
 
     for item in result:

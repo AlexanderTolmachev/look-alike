@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from math import sqrt
 
 APPLICATION_NAME = "Look-Alike Task"
-
+DECIMAL_PRECISION = 5  # number of decimal digits to keep when perform round operation
 
 # Parses user id and site id from log line. Each log line indicates that
 # user with user_id visited site with site_id.
@@ -127,8 +127,8 @@ def calculate_correlations(ratings_data, target_site_id):
         # calculate correlation coefficient itself
         mean1 = ratings_sum1 / items_number
         mean2 = ratings_sum2 / items_number
-        std_dev1 = sqrt(squared_ratings_sum1 / items_number - mean1 * mean1)
-        std_dev2 = sqrt(squared_ratings_sum2 / items_number - mean2 * mean2)
+        std_dev1 = sqrt(round(squared_ratings_sum1 / items_number - mean1 * mean1, DECIMAL_PRECISION))
+        std_dev2 = sqrt(round(squared_ratings_sum2 / items_number - mean2 * mean2, DECIMAL_PRECISION))
         if std_dev1 == 0 or std_dev2 == 0:
             # correlation will be 0, no need to return value
             return []

@@ -1,6 +1,6 @@
 import unittest
 from pyspark import SparkContext, SparkConf
-from look_alike import calculate_ratings
+from look_alike import calculate_ratings, calculate_correlations
 
 
 class LookAlikeTest(unittest.TestCase):
@@ -24,6 +24,16 @@ class LookAlikeTest(unittest.TestCase):
         self.assertEqual(ratings["u3"][123], 1.0)
         self.assertEqual(ratings["u3"][125], 1.0)
         self.assertEqual(ratings["u3"][111], 0.5)
+
+    def test_correlations_calculation(self):
+        ratings = [("u1", {1: 0.5, 2: 1.0, 3: 0.1}),
+                   ("u2", {1: 0.25, 3: 1.0}),
+                   ("u3", {2: 0.25, 3: 1.0})]
+        ratings_data = self.sc.parallelize(ratings)
+        correlations = calculate_correlations(ratings_data, 3).collectAsMap()
+        self.assertEqual(round(correlations[1], 2), -1.0)
+        self.assertEqual(round(correlations[2], 2), -1.0)
+
 
 if __name__ == '__main__':
     unittest.main()

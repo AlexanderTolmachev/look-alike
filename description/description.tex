@@ -28,6 +28,14 @@
 
 \newcommand*\mean[1]{\overline{#1}}
 \newcommand\abs[1]{\left|#1\right|}
+% To fix problem with updating ToC
+\newcommand\immediateaddcontentsline[3]{%
+        \begingroup
+        \let\origwrite\write
+        \def\write{\immediate\origwrite}%
+        \addcontentsline{#1}{#2}{#3}%
+        \endgroup
+}
 
 \setcounter{secnumdepth}{0}
 

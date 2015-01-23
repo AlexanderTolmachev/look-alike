@@ -1,0 +1,4 @@
+spark-submit --master spark://L-PANOV:7077 --conf spark.executor.memory=2g --conf spark.driver.memory=1g
+--conf spark.eventLog.enabled=true  --conf spark.history.fs.logDirectory=C:\\spark-1.2.0\\logs
+ ..\\..\\look-alike\\look_alike.py --input  "C:\\spark-1.2.0\\worker_data\\data-part-*.txt"
+ --target-site 1125 --users-count 10
